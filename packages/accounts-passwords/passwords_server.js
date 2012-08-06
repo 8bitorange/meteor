@@ -113,7 +113,7 @@
 
       if (username && Meteor.users.findOne({username: username}))
         throw new Meteor.Error(403, "User already exists with username " + username);
-      if (email && Meteor.users.findOne({emails: email}))
+      if (email && Meteor.users.findOne({emails: email})) // xcxc what if unvalidated user exists on that email and this one is asked to validate?
         throw new Meteor.Error(403, "User already exists with email " + email);
 
       // XXX validate verifier
@@ -133,6 +133,19 @@
 
       user = Meteor.accounts.onCreateUserHook(options, extra, user);
       var userId = Meteor.users.insert(user);
+
+      if (email && options.validation) {
+        var token = Meteor.uuid();
+        var creationTime = +(new Date);
+        Meteor.users.update(userId, {$set: {
+          "services.password.validation": {
+            token: token,
+            creationTime: creationTime
+          }
+        }});
+
+        Meteor.mail.send(email, Meteor.accounts.urls.validateUser(options.validation.baseUrl, token));
+      }
 
       var loginToken = Meteor.accounts._loginTokens.insert({userId: userId});
       this.setUserId(userId);
@@ -177,6 +190,24 @@
       Meteor.users.update({_id: user._id}, {
         $set: {'services.password.srp': newVerifier},
         $unset: {'services.password.reset': 1}
+      });
+
+      var loginToken = Meteor.accounts._loginTokens.insert({userId: user._id});
+      this.setUserId(user._id);
+      return {token: loginToken, id: user._id};
+    },
+
+    validateUser: function (token) {
+      if (!token)
+        throw new Meteor.Error(400, "Need to pass token");
+
+      var user = Meteor.users.findOne({"services.password.validate.token": token});
+      if (!user)
+        throw new Meteor.Error(403, "Validate user link expired");
+
+      Meteor.users.update({_id: user._id}, {
+        $set: {'services.password.validated': true}, // xcxc should this be sent down to the client?
+        $unset: {'services.password.validate': 1}
       });
 
       var loginToken = Meteor.accounts._loginTokens.insert({userId: user._id});

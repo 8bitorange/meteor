@@ -61,6 +61,9 @@
 
 <!-- needed because of a liveui issue. https://app.asana.com/0/974383817758/1275404875524 -->
 <template name="loginButtonsServicesRowDynamicPart">
+
+  <!-- xcxc ask for email? (sometimes?) -->
+
   {{#if inSignupFlow}}
   <label id="login-password-again-label" for="login-password-again">Password (again)</label>
   <input id="login-password-again" type="password"/>
@@ -137,6 +140,15 @@
     <div class="login-button login-button-form-submit" id="reset-password-button">
       Reset password
     </div>
+  </div>
+  {{/if}}
+</template>
+
+<template name="justValidatedUserForm">
+  {{#if visible}}
+  <div id="just-validated-user-form" class="accounts-dialog">
+    User validated.
+    <div class="login-button" id="just-validated-dismiss-button">Dismiss</div>
   </div>
   {{/if}}
 </template>

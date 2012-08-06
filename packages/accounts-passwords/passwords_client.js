@@ -164,5 +164,7 @@
         callback && callback();
       });
   };
+
+  // xcxc Meteor.validateUser, replace other Meteor.call("validateUser
 })();
 

@@ -9,6 +9,7 @@
   var ERROR_MESSAGE_KEY = 'Meteor.loginButtons.errorMessage';
   var INFO_MESSAGE_KEY = 'Meteor.loginButtons.infoMessage';
   var RESET_PASSWORD_TOKEN_KEY = 'Meteor.loginButtons.resetPasswordToken';
+  var JUST_VALIDATED_USER_KEY = 'Meteor.loginButtons.justValidatedUser';
 
   var resetSession = function () {
     Session.set(IN_SIGNUP_FLOW_KEY, false);
@@ -258,6 +259,35 @@
     Session.set(RESET_PASSWORD_TOKEN_KEY, Meteor.accounts._resetPasswordToken);
   }
 
+
+  //
+  // resetPasswordForm template
+  //
+
+  // xcxc position in file
+  Template.justValidatedUserForm.events = {
+    'click #just-validated-dismiss-button': function () {
+      Session.set(JUST_VALIDATED_USER_KEY, false);
+    }
+  };
+
+  Template.justValidatedUserForm.visible = function () {
+    return Session.get(JUST_VALIDATED_USER_KEY);
+  };
+
+  if (Meteor.accounts._validateUserToken) {
+    // xcxc replace with Meteor.validateUser
+    Meteor.apply(
+      "validateUser", [Meteor.accounts._resetPasswordToken], {wait: true},
+      function (error, result) {
+        if (error) {
+          Meteor.accounts._preventAutoLogin = false;
+        } else {
+          Session.set(JUST_VALIDATED_USER_KEY, true);
+          Meteor.accounts._preventAutoLogin = false;
+        }
+      });
+  }
 
   //
   // helpers
