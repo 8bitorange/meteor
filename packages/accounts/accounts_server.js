@@ -137,6 +137,7 @@
 
   // Updates or creates a user after we authenticate with a 3rd party
   //
+  // xcxc VALIDATED EMAIL?!
   // @param options {Object}
   //   - email (optional)
   //   - services {Object} e.g. {facebook: {id: (facebook user id), ...}}

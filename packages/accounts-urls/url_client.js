@@ -1,3 +1,4 @@
+// xcxc update docs
 // reads a reset password token from the url's hash fragment, if it's there. if so
 // prevent automatically logging in since it could be confusing to be logged in as user
 // A while resetting password for user B
@@ -17,10 +18,10 @@
     window.location.hash = '';
   }
 
-  match = window.location.hash.match(/^\#\?validate-user\/(.*)$/);
+  match = window.location.hash.match(/^\#\?validate-email\/(.*)$/);
   if (match) {
     Meteor.accounts._preventAutoLogin = true;
-    Meteor.accounts._validateUserToken = match[1];
+    Meteor.accounts._validateEmailToken = match[1];
     window.location.hash = '';
   }
 })();

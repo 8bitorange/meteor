@@ -147,9 +147,9 @@
   // @param callback (optional) {Function(error|undefined)}
   Meteor.resetPassword = function(token, newPassword, callback) {
     if (!token)
-      throw new Error("Need to pass options.token");
+      throw new Error("Need to pass token");
     if (!newPassword)
-      throw new Error("Need to pass options.newPassword");
+      throw new Error("Need to pass newPassword");
 
     var verifier = Meteor._srp.generateVerifier(newPassword);
     Meteor.apply(
@@ -165,6 +165,25 @@
       });
   };
 
-  // xcxc Meteor.validateUser, replace other Meteor.call("validateUser
+  // Validates a user's email address based on a token originally
+  // created by Meteor.accounts.sendValidationEmail
+  //
+  // @param token {String}
+  // @param callback (optional) {Function(error|undefined)}
+  Meteor.validateEmail = function(token, callback) {
+    if (!token)
+      throw new Error("Need to pass token");
+
+    Meteor.call(
+      "validateUser", token,
+      function (error, result) {
+        if (error || !result) {
+          error = error || new Error("No result from call to validateUser");
+          callback && callback(error);
+        }
+
+        callback && callback();
+      });
+  };
 })();
 

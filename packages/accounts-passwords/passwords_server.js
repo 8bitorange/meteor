@@ -110,11 +110,19 @@
       var email = options.email;
       if (!username && !email)
         throw new Meteor.Error(400, "Need to set a username or email");
-
+      if (options.validation && !options.baseUrl)
+        throw new Meteor.Error(
+          400, "If options.validation is set, need to pass options.baseUrl");
       if (username && Meteor.users.findOne({username: username}))
         throw new Meteor.Error(403, "User already exists with username " + username);
-      if (email && Meteor.users.findOne({emails: email})) // xcxc what if unvalidated user exists on that email and this one is asked to validate?
-        throw new Meteor.Error(403, "User already exists with email " + email);
+      if (email && Meteor.users.findOne({emails: email})) {
+        if (Meteor.users.fineOne({validatedEmails: email})) {
+          throw new Meteor.Error(403, "User already exists with validated email " + email);
+        } else {
+          // xcxc what???!!XCXC
+          throw new Meteor.Error(403, "User already exists with unvalidated email " + email);
+        }
+      }
 
       // XXX validate verifier
 
@@ -134,18 +142,10 @@
       user = Meteor.accounts.onCreateUserHook(options, extra, user);
       var userId = Meteor.users.insert(user);
 
-      if (email && options.validation) {
-        var token = Meteor.uuid();
-        var creationTime = +(new Date);
-        Meteor.users.update(userId, {$set: {
-          "services.password.validation": {
-            token: token,
-            creationTime: creationTime
-          }
-        }});
-
-        Meteor.mail.send(email, Meteor.accounts.urls.validateUser(options.validation.baseUrl, token));
-      }
+      // If `options.validation` is set, register a token to validate
+      // the user's primary email, and send it to that address.
+      if (email && options.validation)
+        Meteor.accounts.sendValidationEmail(user, email, options.baseUrl);
 
       var loginToken = Meteor.accounts._loginTokens.insert({userId: userId});
       this.setUserId(userId);
@@ -177,6 +177,7 @@
       Meteor.mail.send(email, Meteor.accounts.urls.resetPassword(baseUrl, token));
     },
 
+    // xcxc comment - reset password and log in
     resetPassword: function (token, newVerifier) {
       if (!token)
         throw new Meteor.Error(400, "Need to pass token");
@@ -197,24 +198,43 @@
       return {token: loginToken, id: user._id};
     },
 
-    validateUser: function (token) {
+    // xcxc comment - validate and log in
+    validateEmail: function (token) {
       if (!token)
         throw new Meteor.Error(400, "Need to pass token");
 
-      var user = Meteor.users.findOne({"services.password.validate.token": token});
-      if (!user)
-        throw new Meteor.Error(403, "Validate user link expired");
+      var tokenDocument = Meteor.accounts._emailValidationTokens.findOne(
+        {token: token});
+      if (!tokenDocument)
+        throw new Meteor.Error(403, "Validate email link expired");
 
-      Meteor.users.update({_id: user._id}, {
-        $set: {'services.password.validated': true}, // xcxc should this be sent down to the client?
-        $unset: {'services.password.validate': 1}
-      });
+      Meteor.users.update(
+        {_id: tokenDocument.userId},
+        {$push: {validatedEmails: tokenDocument.email}});
+      Meteor.accounts._emailValidationTokens.remove({token: token});
 
       var loginToken = Meteor.accounts._loginTokens.insert({userId: user._id});
       this.setUserId(user._id);
       return {token: loginToken, id: user._id};
     }
   });
+
+  Meteor.accounts.sendValidationEmail = function (user, email, appBaseUrl) {
+    var token = Meteor.uuid();
+    var creationTime = +(new Date);
+    Meteor._emailValidationTokens.insert({
+      email: email,
+      token: token,
+      creationTime: creationTime,
+      userId: user._id
+    });
+
+    Meteor.mail.send(
+      email,
+      // xcxc probably rename this back
+      Meteor.accounts.urls.validateEmail(
+        appBaseUrl, token));
+  };
 
   // handler to login with password
   Meteor.accounts.registerLoginHandler(function (options) {

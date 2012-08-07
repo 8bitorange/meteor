@@ -275,18 +275,13 @@
     return Session.get(JUST_VALIDATED_USER_KEY);
   };
 
-  if (Meteor.accounts._validateUserToken) {
-    // xcxc replace with Meteor.validateUser
-    Meteor.apply(
-      "validateUser", [Meteor.accounts._resetPasswordToken], {wait: true},
-      function (error, result) {
-        if (error) {
-          Meteor.accounts._preventAutoLogin = false;
-        } else {
-          Session.set(JUST_VALIDATED_USER_KEY, true);
-          Meteor.accounts._preventAutoLogin = false;
-        }
-      });
+  if (Meteor.accounts._validateEmailToken) {
+    Meteor.validateEmail(Meteor.accounts._validateEmailToken, function(error) {
+      if (!error) {
+        Session.set(JUST_VALIDATED_USER_KEY, true); // xcxc ui for this
+        Meteor.accounts._preventAutoLogin = false;
+      }
+    });
   }
 
   //
