@@ -18,13 +18,6 @@ Meteor.accounts._loginTokens = new Meteor.Collection(
   null /*driver*/,
   true /*preventAutopublish*/);
 
-// internal email validation tokens collection. Never published.
-Meteor.accounts._emailValidationTokens = new Meteor.Collection(
-  "accounts._emailValidationTokens",
-  null /*manager*/,
-  null /*driver*/,
-  true /*preventAutopublish*/);
-
 // Users table. Don't use the normal autopublish, since we want to hide
 // some fields. Code to autopublish this is in accounts_server.js.
 Meteor.users = new Meteor.Collection(
